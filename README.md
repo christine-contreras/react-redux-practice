@@ -1,70 +1,277 @@
-# Getting Started with Create React App
+# React Redux Notes
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 3 Core Concepts
 
-## Available Scripts
+- Store: holds the state of you app (on source of truth)
+- Action: describes what happened
+- Reducer: ties the store and actions together
 
-In the project directory, you can run:
+## 3 Principles
 
-### `npm start`
+1. the state of your app is stored in an object tree within a single store
+2. the only way to change that state is to emit an action, an object describing what happened
+   - action has a type: action name
+3. to specify how that state tree is transformed by actions, you write pure reducers (pur functions)
+   - (previousState, action) => newState
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Breakdown of principles
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- you have your react app and you have your redux STORE. the app can not directly make changes to the store
+- in order to make a change you must DISPATCH an ACTION
+- The reducer handles the action and updates the current state
+- as soon as the state is updated the value is passed on to the app and the view is updated
 
-### `npm test`
+## Actions
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- the only way to app can interact with the store
+- carry information for your app to the store
+- are plain JS objects
+- have a TYPE property that indicates the type of action being performed
 
-### `npm run build`
+``js
+const BUY_CAKE = 'BUY_CAKE'
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+{
+type: BUY_CAKE,
+}
+``
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Action Creator
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- function that returns an action
 
-### `npm run eject`
+``js
+const BUY_CAKE = 'BUY_CAKE'
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+const buyCake = () => {
+return {
+type: BUY_CAKE,
+info: 'redux action'
+}
+}
+``
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Reducer
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- how the app state changes based on the actions send to the store
+- state has to be represented by one object
+- accepts state and action as arguments
+- set state to initial state by default
+- make a copy of state as to not mutate
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+``js
+// (previousState, action) => newState
 
-## Learn More
+const initialState = {
+numOfCakes: 10,
+}
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+const reducer = (state = initialState, action) => {
+switch(action.type) {
+case BUY_CAKE: return {
+...state
+numOfCakes: state.numOfCakes - 1
+}
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+        default: return state
+    }
 
-### Code Splitting
+}
+``
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Redux Store
 
-### Analyzing the Bundle Size
+- brings the actions and reducers together
+- holds app state
+- allows access to the state via getState()
+- Alows state to be updated via dispatch(action)
+- Registers listeners via subscribe(listener)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+``js
+import redux from 'redux'
+const createStore = redux.createStore
 
-### Making a Progressive Web App
+const store = createStore(reducer)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+console.log('initial state', store.getState())
 
-### Advanced Configuration
+const unsubscribe = store.subscribe(() => console.log('update state',
+store.getState()))
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+store.dispatch(buyCake())
 
-### Deployment
+unsubscribe()
+``
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Multiple Reducers
 
-### `npm run build` fails to minify
+``js
+const BUY_CAKE = 'BUY_CAKE'
+const BUY_ICE_CREAM = 'BUY_ICE_CREAM'
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+const buyCake = () => {
+return {
+type: BUY_CAKE,
+info: 'redux action'
+}
+}
+
+const buyIceCream = () => {
+return {
+type: BUY_ICE_CREAM,
+}
+}
+
+const initialCakeState = {
+numOfCakes: 10,
+}
+
+const initialIceCreamState = {
+numOfIceCreams: 20
+}
+
+const cakeReducer = (state = initialCakeState, action) => {
+switch(action.type) {
+
+    case BUY_CAKE: return {
+    ...state
+    numOfCakes: state.numOfCakes - 1
+    }
+
+        default: return state
+    }
+
+}
+
+const iceCreamReducer = (state = initialIceCreamState, action) => {
+switch(action.type) {
+
+    case BUY_ICE_CREAM: return {
+    ...state
+    numOfIceCreams: state.numOfIceCreams - 1
+    }
+
+        default: return state
+    }
+
+}
+
+const combineReducers = redux.combineReducers
+const rootReducers = combineReducers({
+cake: cakeReducer,
+iceCream: iceCreamReducer
+})
+
+const store = createStore(rootReducers)
+
+store.dispatch(buyCakes())
+store.dispatch(buyIceCream())
+``
+
+if you want to reach the value it would now be state.cake.numOfCakes
+
+## Middleware
+
+- the suggest way to extend Redux with custom functionality
+- 3rd party extension point between dispatching and actions
+
+``js
+const applyMiddleware = redux.applyMiddleware
+
+const store = createStore(rootReducer, applyMiddleware(logger, saga))
+``
+
+## Async Actions
+
+- ex: api call to fetch data
+
+``js
+const initialState = {
+loading: false,
+data: [],
+error: ''
+}
+
+//Actions
+FETCH_USERS_REQUEST = 'FETCH_USERS_REQUEST'
+FETCH_USERS_SUCCESS = 'FETCH_USERS_SUCCESS'
+FETCH_USERS_FAILURE = 'FETCH_USERS_FAILURE'
+
+//Action Creators
+const fetchUsersRequest = () => {
+type: FETCH_USERS_REQUEST
+}
+
+const fetchUsersSuccess = () => {
+type: FETCH_USERS_SUCCESS,
+payload: users
+}
+
+const fetchUsersFailure = () => {
+type: FETCH_USERS_FAILURE,
+payload: error
+}
+
+//Reducer
+const fetchReducer = (state = initialState, action) => {
+switch(action.type) {
+case FETCH_USERS_REQUEST:
+return {
+...state,
+loading: true
+}
+
+        case FETCH_USERS_SUCCESS:
+        return {
+            ...state,
+            loading: false,
+            users: action.payload,
+            error: ''
+        }
+
+        case FETCH_USERS_FAILURE:
+        return {
+            ...state,
+            loading: false,
+            users: []
+            error: action.payload,
+        }
+    }
+
+}
+
+const store = createStore(reducer)
+
+``
+
+## Async Action Creators
+
+- axios (optional)
+- redux-thunk
+- redux-saga
+
+action creators usually return an object. with thunk it returns a function
+``js
+
+const fetchUsers = () => {
+return function(dispatch) {
+dispatch(fetchUsersRequest())
+
+        axios.get('https://jsonplaceholder.typicode.com/users')
+        .then(response => {
+            const users = response.data
+            dispatch(fetchUsersSuccess(users))
+
+        })
+        .catch(error => {
+            //error.message
+            dispatch(fetchUsersFailure(error.message))
+        })
+    }
+
+const store = createStore(reducer, applyMiddleware(thunkMiddleware))
+store.subscribe(() => { console.log(store.getState())})
+
+store.dispatch(fetchUsers())
+}
+``
